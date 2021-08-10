@@ -1,9 +1,13 @@
 import telebot
-from selenium import webdriver
-from time import sleep
+from googleapiclient.discovery import build
 from bs4 import BeautifulSoup as soup
-import re
+import requests
+import pandas as pd
+import os
+import telebot
+from datetime import datetime 
 
+Key = 'AIzaSyDkZ88vmUxTgV-G9lF2cAPScazuJ2hnbXA'
 TOKEN = '1911738006:AAE2xewL_2WjHVl2H1DoR4-UN7RL5ZyAhrY'
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
@@ -22,85 +26,75 @@ def handle_message(message):
 def handle_message(message):
 	bot.reply_to(message, 'Text not implemented yet') # TO DO
 
-def Scrap(url):
+def get_stats(url):
+    a = datetime.now()
+    ID = url[url.find("=")+1:]
 
-    driver = webdriver.Chrome(executable_path="chromedriver.exe")
-    driver.maximize_window()
-    driver.get(url)
+    youtube = build('youtube','v3', developerKey=Key)
+    Request = youtube.videos().list(part = 'snippet,statistics,contentDetails', id = ID)
+    response = Request.execute()
 
-    sleep(2)
-    driver.find_element_by_xpath('//*[@id="content"]/div[2]/div[5]/div[2]/ytd-button-renderer[2]/a').click()
+    Captions_raw = requests.get(f"http://video.google.com/timedtext?lang=en&v={ID}")
+    captions_html = soup(Captions_raw.content, "html.parser")
 
-    for v in range(0, 20):
-        Scroll = driver.execute_script("window.scrollBy(0,250)")
-    for w in range(0, 20):
-        Scroll = driver.execute_script("window.scrollBy(0,-250)")
+    Title = response['items'][0]['snippet']['title']
+    Views  = response['items'][0]['statistics']['viewCount']
+    Likes = response['items'][0]['statistics']['likeCount']
+    Dislikes = response['items'][0]['statistics']['dislikeCount']
+    Comments = response['items'][0]['statistics']['commentCount']
+    Lenght = response['items'][0]['contentDetails']['duration'].replace("PT","").replace("M",":").replace("S","").replace("H",":")
+    description = response['items'][0]['snippet']['description']
+    Image = response['items'][0]['snippet']['thumbnails']['maxres']['url']
+    Transcript_check = response['items'][0]['contentDetails']['caption']
+
+    Captions = str([Text.text for Text in captions_html.findAll("text")])
     
-    dots=driver.find_element_by_xpath('/html/body/ytd-app/div/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/div[6]/div[2]/ytd-video-primary-info-renderer/div/div/div[3]/div/ytd-menu-renderer/yt-icon-button/button/yt-icon')
-    dots.click()
-    sleep(1)
-    trans=driver.find_element_by_xpath('/html/body/ytd-app/ytd-popup-container/tp-yt-iron-dropdown/div/ytd-menu-popup-renderer/tp-yt-paper-listbox/ytd-menu-service-item-renderer/tp-yt-paper-item/yt-formatted-string')
-    trans.click()
-    dots_trans = driver.find_element_by_xpath('/html/body/ytd-app/div/ytd-page-manager/ytd-watch-flexy/div[5]/div[2]/div/div[1]/ytd-engagement-panel-section-list-renderer/div[1]/ytd-engagement-panel-title-header-renderer/div[2]/div[5]/ytd-menu-renderer/yt-icon-button/button/yt-icon')
-    dots_trans.click()
-    sleep(1)
-    timestamps = driver.find_element_by_xpath('/html/body/ytd-app/ytd-popup-container/tp-yt-iron-dropdown/div/ytd-menu-popup-renderer/tp-yt-paper-listbox/ytd-menu-service-item-renderer/tp-yt-paper-item/yt-formatted-string')
-    timestamps.click()
-    sleep(1)
+    if Transcript_check == 'true':
+        pd.DataFrame([Captions]).to_csv("Captions.txt")
+        result_caption = " Please Check the file sent to you"
+    else:
+        result_caption = " No Captions were found sorry :'("
+        
+    b = datetime.now()
 
-    html = driver.page_source
-    page_soup = soup(html, "html.parser")
+    execution_time = (b - a).seconds
+    return f"It took {execution_time} seconds to execute.\n\nTiTle: {Title} \n\nLenght: {Lenght} mins \n\nViews: {Views} Views\n\nLikes: {Likes} Likes\n\nDislikes: {Dislikes} Dislikes\n\nComments: {Comments} Comments\n\n\nDescription:\n\n{description}\n\nCaptions:{result_caption} ========= End"
 
-    Views  = page_soup.find("span",{"class":"short-view-count style-scope ytd-video-view-count-renderer"}).text
-    Likes = page_soup.findAll("a",{"class":"yt-simple-endpoint style-scope ytd-toggle-button-renderer"})[0].text
-    Dislikes = page_soup.findAll("a",{"class":"yt-simple-endpoint style-scope ytd-toggle-button-renderer"})[1].text
-    Lenght = page_soup.find("span",{"class":"ytp-time-duration"}).text
-    description = page_soup.find("div",{"id":"description"}).text
-    Comments = page_soup.findAll('span', text = re.compile(' Comments'), attrs = {'dir' : 'auto'})[0].findPrevious().text
-    Title = page_soup.find("h1",{"class":"title style-scope ytd-video-primary-info-renderer"}).text
-    Transcripts = page_soup.findAll("div",{"role":"button"})
-    Transcript = ''.join([t.text.strip() + " " for t in Transcripts])
-
-    driver.get("https://www.google.com")
-    Info =  {"Title ": Title,"Lenght ": Lenght,"Views ": Views,"Likes ": Likes,"Dislikes ": Dislikes,"Comments ": Comments,"description ": description,"Transcript ": Transcript,}
-    return f"TiTle: {Title} \n\nLenght: {Lenght} mins \n\nViews: {Views}\n\nLikes: {Likes} Likes\n\nDislikes: {Dislikes} Dislikes\n\nComments: {Comments} Comments\n\n\nDescription:\n\n  {description} \n\nTranscript\n\n {Transcript} \n\n\n========= End"
+def message(message):
+    url = f"{message}"
+    return url
 
 @bot.message_handler(regexp='https://www.youtube.com/watch\?v=')
 def handle_message(message):
-    bot.send_message(message.chat.id, "Wait Please, it will take less than 5 seconds :)")
     url = message.text
-    reply = Scrap(url)
+    try:
+        reply = get_stats(url)
+        bot.send_message(message.chat.id, reply)
+        if os.path.exists("Captions.txt"):
+            doc = open('Captions.txt', 'rb')
+            bot.send_document(message.chat.id, doc)  
+            doc.close()
+    except:
+        bot.send_message(message.chat.id, "Something is wrong with your Address, please make sure you've provided the correct link of a YouTube video")
+    try:
+        os.remove("Captions.txt")
+    except:
+        pass
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('Transcript', 'Stats', 'Back')
-    bot.reply_to(message.chat.id, reply, reply_markup=keyboard)
+    keyboard.row('Show transcript', 'Back')
+
     # if message.text.find('&list=') == True:
     #     for href in hrefs:
     #         youtube_scraper(href)
 	# youtube_scraper(href)
     # bot.reply_to(message, 'Function not implemented yet', reply_markup=keyboard)
 
-@bot.message_handler(regexp='Stats')
+@bot.message_handler(regexp='Show transcript')
 def handle_message(message):
-	bot.reply_to(message, 'Stats:')
-
-@bot.message_handler(regexp='Transcript')
-def handle_message(message):
-	bot.reply_to(message, 'Transcript:')
+	bot.reply_to(message, 'Not implemented yet')
 
 @bot.message_handler(regexp='Back')
 def handle_message(message):
     send_welcome(message)
-
-def message(message):
-    url = f"{message}"
-    return url
-
-@bot.message_handler(func=message)
-def echo_all(message):
-    bot.send_message(message.chat.id, "Wait Please, it will take less than 5 seconds :)")
-    url = message.text
-    reply = Scrap(url)
-    bot.send_message(message.chat.id, reply)
-
 
 bot.polling()
