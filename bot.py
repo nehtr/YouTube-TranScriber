@@ -3,6 +3,7 @@ YouTube TranScriber v1.0
 
 @authors:
     - Davide
+    - Sivareddy
     - Walid
 
 """
