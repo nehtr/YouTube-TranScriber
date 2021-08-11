@@ -64,7 +64,7 @@ def get_languages(url):
     Languages = Soup.findAll("track")
     return {Language["lang_original"] : Language["lang_code"] for Language in Languages}
 
-def get_stats(url, lang):
+def get_stats(url, lang='en'):
     try:
         os.remove("Captions.txt")
     except:
@@ -102,6 +102,9 @@ def handle_message(message):
         bot.reply_to(message, 'Please, select the language:', reply_markup=keyboard)
     else:
         bot.send_message(message.chat.id, "⚠️ No captions are present in this video! ⚠️", reply_markup=keyboard)
+        bot.send_message(message.chat.id, '🚧 Please, wait. Retrieving the statistics... 🚧', reply_markup=keyboard)
+        reply = get_stats(url)
+        bot.send_message(message.chat.id, reply, reply_markup=keyboard)
 
 @bot.callback_query_handler(func=lambda call : call.data in bcp47.languages.values())
 def callback_query(call):
@@ -110,9 +113,9 @@ def callback_query(call):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     try:
         reply = get_stats(url, lang)
+        bot.send_message(call.message.chat.id, reply, reply_markup=keyboard)
         if os.path.exists("Captions.txt"):
             keyboard.row('Show transcription', 'Back')
-            bot.send_message(call.message.chat.id, reply, reply_markup=keyboard)
             bot.send_message(call.message.chat.id, "✅ The transcription has been saved in the file below ⬇️", reply_markup=keyboard)
             doc = open('Captions.txt', 'rb')
             bot.send_document(call.message.chat.id, doc)
