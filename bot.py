@@ -20,8 +20,7 @@ import re
 import bcp47
 
 Key = 'AIzaSyDkZ88vmUxTgV-G9lF2cAPScazuJ2hnbXA'
-# TOKEN = '1911738006:AAE2xewL_2WjHVl2H1DoR4-UN7RL5ZyAhrY'
-TOKEN = '1804086945:AAFbhluZ2A0hrvB2w4Ki6HO_ZsyIxeaBrZ8'
+TOKEN = '1911738006:AAE2xewL_2WjHVl2H1DoR4-UN7RL5ZyAhrY'
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 url = ""
@@ -134,12 +133,6 @@ def callback_query(call):
     except:
         keyboard.row('Transcribe', 'Back')
         bot.send_message(call.message.chat.id, "❌ Something is wrong with your address, please make sure you've provided the correct link of a YouTube video. ❌", reply_markup=keyboard)
-
-    # if message.text.find('&list=') == True:
-    #     for href in hrefs:
-    #         youtube_scraper(href)
-	# youtube_scraper(href)
-    # bot.reply_to(message, 'Function not implemented yet', reply_markup=keyboard)
 
 @bot.message_handler(regexp='Show transcription')
 def handle_message(message):
