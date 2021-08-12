@@ -20,8 +20,7 @@ import re
 import bcp47
 
 Key = 'AIzaSyDkZ88vmUxTgV-G9lF2cAPScazuJ2hnbXA'
-# TOKEN = '1911738006:AAE2xewL_2WjHVl2H1DoR4-UN7RL5ZyAhrY'
-TOKEN = '1804086945:AAFbhluZ2A0hrvB2w4Ki6HO_ZsyIxeaBrZ8'
+TOKEN = '1911738006:AAE2xewL_2WjHVl2H1DoR4-UN7RL5ZyAhrY'
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 url = ""
