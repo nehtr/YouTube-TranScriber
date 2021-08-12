@@ -143,7 +143,7 @@ def handle_message_link(message):
         bot.send_message(message.chat.id, '🚧 Please, wait. Retrieving the statistics... 🚧', reply_markup=keyboard)
         reply = get_stats(url)
         if reply == False:
-            bot.send_message(message.chat.id, "⚠️ Error, impossible to retrieve the statistics! ⚠️", reply_markup=keyboard)
+            bot.send_message(message.chat.id, "❌ Something is wrong with your address, please make sure you've provided the correct link of a YouTube video. ❌", reply_markup=keyboard)
         else:
             bot.send_message(message.chat.id, reply, reply_markup=keyboard)
 
@@ -189,8 +189,7 @@ def handle_message_back(message):
 
 @bot.message_handler(func=lambda message: True)
 def handle_unexpected_message(message):
-    keyboard = telebot.types.InlineKeyboardMarkup()
-    keyboard.row('Transcribe', 'Back')
-    bot.send_message(message.chat.id, "❌ Something is wrong with your address, please make sure you've provided the correct link of a YouTube video. ❌", reply_markup=keyboard)
+    bot.send_message(message.chat.id, "❌ Something is wrong with your address, please make sure you've provided the correct link of a YouTube video. ❌")
+    send_welcome(message)
 
 bot.polling()
