@@ -93,11 +93,6 @@ def get_stats(url, lang='en'):
     except:
         return False
 
-def url_cleaner(url):
-    if re.search('&', url) != None:
-        url = url[:url.find("&")]
-    return url
-
 def url_handler(url):
     url_base = 'https://www.youtube.com/watch\?v='
     if re.search('v=.{11}', url) != None:
