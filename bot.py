@@ -20,7 +20,8 @@ import re
 import bcp47
 
 Key = 'AIzaSyDkZ88vmUxTgV-G9lF2cAPScazuJ2hnbXA'
-TOKEN = '1911738006:AAE2xewL_2WjHVl2H1DoR4-UN7RL5ZyAhrY'
+# TOKEN = '1911738006:AAE2xewL_2WjHVl2H1DoR4-UN7RL5ZyAhrY'
+TOKEN = '1804086945:AAFbhluZ2A0hrvB2w4Ki6HO_ZsyIxeaBrZ8'
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 url = ""
@@ -90,10 +91,16 @@ def get_stats(url, lang='en'):
         new_file.writelines(Captions)
     return f"Title: {Title} \n\nLenght: {Lenght} mins \n\nViews: {Views} Views\n\nLikes: {Likes} Likes\n\nDislikes: {Dislikes} Dislikes\n\nComments: {Comments} Comments\n\n\nDescription:\n\n{description}"
 
+def url_cleaner(url):
+    if re.search('&', url) != None:
+        url = url[:url.find("&")]
+    return url
+
 @bot.message_handler(regexp='https://www.youtube.com/watch\?v=')
 def handle_message(message):
     global url
     url = message.text
+    url = url_cleaner(url)
     lang_choice = get_languages(url)
     keyboard = telebot.types.InlineKeyboardMarkup()
     for key, value in lang_choice.items():
@@ -125,12 +132,8 @@ def callback_query(call):
             bot.send_message(call.message.chat.id, reply, reply_markup=keyboard)
             bot.send_message(call.message.chat.id, "⚠️ No captions are present in this video! ⚠️", reply_markup=keyboard)
     except:
-        if re.search('&list=', url) != None:
-            keyboard.row('Transcribe', 'Back')
-            bot.send_message(call.message.chat.id, "❌ Link to YouTube playlists are not implemented yet. Please, use the link of the single video instead ❌", reply_markup=keyboard)
-        else:
-            keyboard.row('Transcribe', 'Back')
-            bot.send_message(call.message.chat.id, "❌ Something is wrong with your address, please make sure you've provided the correct link of a YouTube video. ❌", reply_markup=keyboard)
+        keyboard.row('Transcribe', 'Back')
+        bot.send_message(call.message.chat.id, "❌ Something is wrong with your address, please make sure you've provided the correct link of a YouTube video. ❌", reply_markup=keyboard)
 
     # if message.text.find('&list=') == True:
     #     for href in hrefs:
