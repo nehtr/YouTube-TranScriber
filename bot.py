@@ -20,7 +20,8 @@ import re
 import bcp47
 
 Key = 'AIzaSyDkZ88vmUxTgV-G9lF2cAPScazuJ2hnbXA'
-TOKEN = '1911738006:AAE2xewL_2WjHVl2H1DoR4-UN7RL5ZyAhrY'
+# TOKEN = '1911738006:AAE2xewL_2WjHVl2H1DoR4-UN7RL5ZyAhrY'
+TOKEN = '1804086945:AAFbhluZ2A0hrvB2w4Ki6HO_ZsyIxeaBrZ8'
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 url = ""
@@ -32,13 +33,13 @@ def send_welcome(message):
     bot.reply_to(message, '📝 Welcome to YouTube TranScriber 1.0! 📝\n\nSelect an option', reply_markup=keyboard)
 
 @bot.message_handler(regexp='Transcribe')
-def handle_message(message):
+def handle_message_transcribe(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('Help')
     bot.reply_to(message, 'Please, insert the link of the video:', reply_markup=keyboard)
 
 @bot.message_handler(regexp='Help')
-def handle_message(message):
+def handle_message_help(message):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('Transcribe')
     bot.reply_to(message, '''
@@ -75,31 +76,68 @@ def get_stats(url, lang='en'):
     response = Request.execute()
     Captions_raw = requests.get(f"http://video.google.com/timedtext?lang={lang}&v={ID}")
     captions_html = soup(Captions_raw.content, "html.parser")
-    Title = response['items'][0]['snippet']['title']
-    Views  = response['items'][0]['statistics']['viewCount']
-    Likes = response['items'][0]['statistics']['likeCount']
-    Dislikes = response['items'][0]['statistics']['dislikeCount']
-    Comments = response['items'][0]['statistics']['commentCount']
-    Lenght = response['items'][0]['contentDetails']['duration'].replace("PT","").replace("M",":").replace("S","").replace("H",":")
-    description = response['items'][0]['snippet']['description']
-    Image = response['items'][0]['snippet']['thumbnails']['maxres']['url']
-    Transcript_check = response['items'][0]['contentDetails']['caption']
-    if Transcript_check == 'true':
-        Captions = [Text.text for Text in captions_html.findAll("text")]
-        new_file = open("Captions.txt", mode="w", encoding="utf-8")
-        new_file.writelines(Captions)
-    return f"Title: {Title} \n\nLenght: {Lenght} mins \n\nViews: {Views} Views\n\nLikes: {Likes} Likes\n\nDislikes: {Dislikes} Dislikes\n\nComments: {Comments} Comments\n\n\nDescription:\n\n{description}"
+    try: 
+        Title = response['items'][0]['snippet']['title']
+        Views  = response['items'][0]['statistics']['viewCount']
+        Likes = response['items'][0]['statistics']['likeCount']
+        Dislikes = response['items'][0]['statistics']['dislikeCount']
+        Comments = response['items'][0]['statistics']['commentCount']
+        Lenght = response['items'][0]['contentDetails']['duration'].replace("PT","").replace("M",":").replace("S","").replace("H",":")
+        description = response['items'][0]['snippet']['description']
+        # Image = response['items'][0]['snippet']['thumbnails']['maxres']['url']
+        Transcript_check = response['items'][0]['contentDetails']['caption']
+        if Transcript_check == 'true':
+            Captions = [Text.text for Text in captions_html.findAll("text")]
+            new_file = open("Captions.txt", mode="w", encoding="utf-8")
+            new_file.writelines(Captions)
+        return f"Title: {Title} \n\nLenght: {Lenght} mins \n\nViews: {Views} Views\n\nLikes: {Likes} Likes\n\nDislikes: {Dislikes} Dislikes\n\nComments: {Comments} Comments\n\n\nDescription:\n\n{description}"
+    except:
+        return False
 
 def url_cleaner(url):
     if re.search('&', url) != None:
         url = url[:url.find("&")]
     return url
 
-@bot.message_handler(regexp='https://www.youtube.com/watch\?v=')
-def handle_message(message):
+def url_handler(url):
+    url_base = 'https://www.youtube.com/watch\?v='
+    if re.search('v=.{11}', url) != None:
+        vid = re.search('v=.{11}', url).group(0)
+        url = url_base + vid[2:]
+    if re.search('v/.{11}', url) != None:
+        vid = re.search('v/.{11}', url).group(0)
+        url = url_base + vid[2:]
+    if re.search('vi/.{11}', url) != None:
+        vid = re.search('vi/.{11}', url).group(0)
+        url = url_base + vid[3:]
+    if re.search('1/.{11}', url) != None:
+        vid = re.search('1/.{11}', url).group(0)
+        url = url_base + vid[2:]
+    if re.search('2/.{11}', url) != None:
+        vid = re.search('2/.{11}', url).group(0)
+        url = url_base + vid[2:]
+    if re.search('embed/.{11}', url) != None:
+        vid = re.search('embed/.{11}', url).group(0)
+        url = url_base + vid[6:]
+    if re.search('\.be/.{11}', url) != None:
+        vid = re.search('\.be/.{11}', url).group(0)
+        url = url_base + vid[4:]
+    if re.search('v%.{11}', url) != None:
+        vid = re.search('v%.{11}', url).group(0)
+        url = url_base + vid[2:]
+    if re.search('e/.{11}', url) != None:
+        vid = re.search('e/.{11}', url).group(0)
+        url = url_base + vid[2:]
+    if re.search('vi.{11}', url) != None:
+        vid = re.search('vi.{11}', url).group(0)
+        url = url_base + vid[2:]
+    return url
+
+@bot.message_handler(regexp='https?://(www.)?youtu.?be(.com)?/')
+def handle_message_link(message):
     global url
     url = message.text
-    url = url_cleaner(url)
+    url = url_handler(url)
     lang_choice = get_languages(url)
     keyboard = telebot.types.InlineKeyboardMarkup()
     for key, value in lang_choice.items():
@@ -110,16 +148,23 @@ def handle_message(message):
         bot.send_message(message.chat.id, "⚠️ No captions are present in this video! ⚠️", reply_markup=keyboard)
         bot.send_message(message.chat.id, '🚧 Please, wait. Retrieving the statistics... 🚧', reply_markup=keyboard)
         reply = get_stats(url)
-        bot.send_message(message.chat.id, reply, reply_markup=keyboard)
+        if reply == False:
+            bot.send_message(message.chat.id, "⚠️ Error, impossible to retrieve the statistics! ⚠️", reply_markup=keyboard)
+        else:
+            bot.send_message(message.chat.id, reply, reply_markup=keyboard)
 
 @bot.callback_query_handler(func=lambda call : call.data in bcp47.languages.values())
-def callback_query(call):
+def callback_query_language(call):
     lang = call.data
     bot.send_message(call.message.chat.id, '🚧 Please, wait. Work in progress... 🚧')
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     try:
         reply = get_stats(url, lang)
-        bot.send_message(call.message.chat.id, reply, reply_markup=keyboard)
+        if reply == False:
+            keyboard.row('Transcribe', 'Back')
+            bot.send_message(call.message.chat.id, "⚠️ Error, impossible to retrieve the statistics! ⚠️", reply_markup=keyboard)
+        else:
+            bot.send_message(call.message.chat.id, reply, reply_markup=keyboard)
         if os.path.exists("Captions.txt"):
             keyboard.row('Show transcription', 'Back')
             bot.send_message(call.message.chat.id, "✅ The transcription has been saved in the file below ⬇️", reply_markup=keyboard)
@@ -135,7 +180,7 @@ def callback_query(call):
         bot.send_message(call.message.chat.id, "❌ Something is wrong with your address, please make sure you've provided the correct link of a YouTube video. ❌", reply_markup=keyboard)
 
 @bot.message_handler(regexp='Show transcription')
-def handle_message(message):
+def handle_message_show_transcript(message):
     with open("Captions.txt", "rb") as large_text:
         large_text = large_text.read()
         keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -145,7 +190,13 @@ def handle_message(message):
             bot.send_message(message.chat.id, text, reply_markup=keyboard)
 
 @bot.message_handler(regexp='Back')
-def handle_message(message):
+def handle_message_back(message):
     send_welcome(message)
+
+@bot.message_handler(func=lambda message: True)
+def handle_unexpected_message(message):
+    keyboard = telebot.types.InlineKeyboardMarkup()
+    keyboard.row('Transcribe', 'Back')
+    bot.send_message(message.chat.id, "❌ Something is wrong with your address, please make sure you've provided the correct link of a YouTube video. ❌", reply_markup=keyboard)
 
 bot.polling()
