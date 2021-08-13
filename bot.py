@@ -18,9 +18,12 @@ import os
 import telebot
 import re
 import bcp47
+from boto.s3.connection import S3Connection
 
-Key = 'AIzaSyDkZ88vmUxTgV-G9lF2cAPScazuJ2hnbXA'
-TOKEN = '1911738006:AAE2xewL_2WjHVl2H1DoR4-UN7RL5ZyAhrY'
+
+TOKEN = os.environ['TOKEN']
+Key = os.environ['Key']
+
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 url = ""
