@@ -18,8 +18,7 @@ import os
 import telebot
 import re
 import bcp47
-from boto.s3.connection import S3Connection
-
+import html
 
 TOKEN = os.environ['TOKEN']
 Key = os.environ['Key']
@@ -89,7 +88,7 @@ def get_stats(url, lang='en'):
         # Image = response['items'][0]['snippet']['thumbnails']['maxres']['url']
         Transcript_check = response['items'][0]['contentDetails']['caption']
         if Transcript_check == 'true':
-            Captions = [Text.text for Text in captions_html.findAll("text")]
+            Captions = ' '.join([html.unescape(Text.text).replace("\n"," ") for Text in captions_html.findAll("text")])
             new_file = open("Captions.txt", mode="w", encoding="utf-8")
             new_file.writelines(Captions)
         return f"Title: {Title} \n\nLenght: {Lenght} mins \n\nViews: {Views} Views\n\nLikes: {Likes} Likes\n\nDislikes: {Dislikes} Dislikes\n\nComments: {Comments} Comments\n\n\nDescription:\n\n{description}"
